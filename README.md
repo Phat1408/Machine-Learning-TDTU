@@ -1,7 +1,9 @@
 # DỰ ÁN CUỐI KỲ NHẬP MÔN MACHINE LEARNING
 ## Phần 1: Phần tìm hiểu cá nhân
 ### 1.1 Tìm hiểu, so sánh về các Optmizers
+
 ![Optimizers in Machine Learning!](./imgs/optimizers.png "Optimizers in Machine Learning")
+
 Trong machine learning hay cụ thể hơn là deep learning, nhiệm vụ của các optimizer hay optimizer algorithms (các thuật toán tối ưu) là những thuật toán giúp điều chỉnh các parameters (weights, biases, learning rates, ...) của model trong suốt quá trình training để làm sao giải thiểu được loss function. Những optimizers thường lặp đi lặp lại việc cập nhật các weights và biases.
 
 Các optimizers có mục tiêu chung là phải giúp cho việc training càng nhanh càng tốt và cho ra các parameters sao cho dự đoán kết quả chính xác.
