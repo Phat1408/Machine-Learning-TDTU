@@ -1,13 +1,16 @@
 import numpy as np 
+import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import StandardScaler
 from datetime import datetime, timedelta
 import copy
 
-def encode(X_train, y_train, X_test, y_test):
+def encode(X_train, X_test, y_train, y_test):
     new_X_train = copy.copy(X_train)
-    new_y_train = copy.copy(y_train)
     new_X_test = copy.copy(X_test)
+    new_y_train = copy.copy(y_train)
     new_y_test = copy.copy(y_test)
 
     day_of_week_enc = {
@@ -37,7 +40,7 @@ def encode(X_train, y_train, X_test, y_test):
     new_X_test['Time'] =  enc.transform(np.array([new_X_test['Time']]).reshape(-1, 1)).reshape(-1)
     new_y_test['Traffic Situation'] = new_y_test['Traffic Situation'].replace(traffic_sistuation)
 
-    return new_X_train, new_y_train, new_X_test, new_y_test
+    return new_X_train, new_X_test, new_y_train, new_y_test
 
 def get_features_target(Train, Test):
     X_train = Train.drop(['Traffic Situation'], axis=1).values
@@ -46,7 +49,7 @@ def get_features_target(Train, Test):
     X_test = Test.drop(['Traffic Situation'], axis=1).values
     y_test = Test['Traffic Situation'].values
 
-    return X_train, y_train, X_test, y_test
+    return X_train, X_test, y_train, y_test
 
 def plot_grouped_barchart(categories, values, models, xlabel, ylabel, titile):
     num_groups = len(values)
@@ -123,3 +126,68 @@ def plot_Loss_Val(history):
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
+
+def plot_Accuracy(history):
+    plt.figure(figsize=(8,5))
+    plt.plot(history.history['accuracy'], 'b', label='Training accuracy')
+    plt.plot(history.history['val_accuracy'], 'r', label='Validation accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.show()
+
+def load_data():
+    df = pd.read_csv('./TrafficTwoMonth.csv')
+    X = df.drop(['Traffic Situation'], axis=1)
+    y = df[['Traffic Situation']]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2022)
+    X_train, X_test, y_train, y_test = encode(X_train, X_test, y_train, y_test)
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return X_train, X_test, y_train.values, y_test.values
+
+def load_data_RNN_case2():
+    df = pd.read_csv('./TrafficTwoMonth.csv')
+
+    traffic_sistuation = {
+        'low': 0,
+        'normal': 1,
+        'high': 2, 
+        'heavy':3
+    }
+
+    new_df = copy.copy(df)
+    new_df = new_df.drop(["CarCount", "BikeCount", "BusCount", "TruckCount", "Total"], axis=1)
+    new_df2 = copy.copy(new_df)
+    new_df2['Datetime'] = new_df2.apply(lambda x: generate_datetime(x['Time'], x['Date'], x['Day of the week']), axis=1) 
+    new_df3 = new_df2.set_index('Datetime')
+    new_df4 = new_df3.drop(['Time', 'Date', 'Day of the week'], axis=1)
+    new_df4['Traffic Situation'] = new_df4['Traffic Situation'].replace(traffic_sistuation)
+    data = pd.get_dummies(new_df4.to_numpy().reshape(-1), dtype=int).values
+    
+    timestep = 30
+
+    X = []
+    y = []
+
+    n = len(data)
+
+    for i in range(n - (timestep)):
+        X.append(data[i:i+timestep])
+        y.append(data[i+timestep])
+
+    X = np.asanyarray(X)
+    y = np.asanyarray(y)
+
+
+    index_test = 5000
+    X_train = X[:index_test,:,:]
+    X_test = X[index_test:,:,:]
+    y_train = y[:index_test]    
+    y_test= y[index_test:]
+
+    return X_train, X_test, y_train, y_test
